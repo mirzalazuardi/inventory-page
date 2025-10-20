@@ -1,0 +1,413 @@
+openapi: 3.0.0
+info:
+  title: Simple Inventory Transaction API
+  description: |
+    JSON API for managing inventory transactions with support for incoming/outgoing stock operations,
+    header-based pagination, filtering, and sorting.
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /transactions:
+    post:
+      summary: Create a new inventory transaction
+      description: |
+        Creates a new transaction to adjust product stock. Supports two transaction types:
+        - "in": Increases product stock by the specified quantity
+        - "out": Decreases product stock by the specified quantity (rejected if insufficient stock)
+
+        Transaction creation and stock update are atomic operations.
+      operationId: createTransaction
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+                - quantity
+                - transaction_type
+              properties:
+                product_id:
+                  type: integer
+                  description: ID of the product to transact
+                  example: 1
+                  minimum: 1
+                quantity:
+                  type: integer
+                  description: Amount of stock to add or remove (must be positive)
+                  example: 20
+                  minimum: 1
+                transaction_type:
+                  type: string
+                  description: Direction of stock movement
+                  enum: [in, out]
+                  example: "in"
+            examples:
+              incoming_stock:
+                summary: Incoming stock transaction
+                value:
+                  product_id: 1
+                  quantity: 50
+                  transaction_type: "in"
+              outgoing_stock:
+                summary: Outgoing stock transaction
+                value:
+                  product_id: 1
+                  quantity: 20
+                  transaction_type: "out"
+      responses:
+        '200':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Transaction created successfully"
+                  product:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "Apple"
+                      stock:
+                        type: integer
+                        description: Updated stock level after transaction
+                        example: 70
+              examples:
+                incoming_success:
+                  summary: Successful incoming transaction
+                  value:
+                    message: "Transaction created successfully"
+                    product:
+                      id: 1
+                      name: "Apple"
+                      stock: 70
+                outgoing_success:
+                  summary: Successful outgoing transaction
+                  value:
+                    message: "Transaction created successfully"
+                    product:
+                      id: 1
+                      name: "Apple"
+                      stock: 30
+        '422':
+          description: Unprocessable Entity - Validation failed or insufficient stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Human-readable error message
+              examples:
+                insufficient_stock:
+                  summary: Insufficient stock for outgoing transaction
+                  value:
+                    error: "Insufficient stock for product Apple"
+                invalid_quantity:
+                  summary: Invalid quantity (zero or negative)
+                  value:
+                    error: "Quantity must be greater than 0"
+                invalid_type:
+                  summary: Invalid transaction type
+                  value:
+                    error: "Transaction type must be 'in' or 'out'"
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Product not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Internal server error"
+
+    get:
+      summary: List all transactions
+      description: |
+        Retrieves a paginated list of all inventory transactions. Supports:
+        - Header-based pagination (Page, Per-Page, Total, Total-Pages)
+        - Filtering by product_id using Ransack query syntax
+        - Sorting by any field (quantity, created_at, etc.) using Ransack sort syntax
+
+        Preloads product associations to prevent N+1 queries.
+      operationId: listTransactions
+      tags:
+        - Transactions
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: q[product_id_eq]
+          in: query
+          description: Filter transactions by exact product ID (Ransack syntax)
+          required: false
+          schema:
+            type: integer
+          example: 5
+        - name: q[transaction_type_eq]
+          in: query
+          description: Filter transactions by type (Ransack syntax)
+          required: false
+          schema:
+            type: string
+            enum: [in, out]
+          example: "out"
+        - name: q[s]
+          in: query
+          description: Sort field and direction (Ransack syntax, e.g., "quantity desc", "created_at asc")
+          required: false
+          schema:
+            type: string
+          example: "quantity desc"
+      responses:
+        '200':
+          description: Successful response with paginated transactions
+          headers:
+            Page:
+              description: Current page number
+              schema:
+                type: integer
+              example: 1
+            Per-Page:
+              description: Number of items per page
+              schema:
+                type: integer
+              example: 20
+            Total:
+              description: Total number of transactions matching filters
+              schema:
+                type: integer
+              example: 150
+            Total-Pages:
+              description: Total number of pages
+              schema:
+                type: integer
+              example: 8
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    product_id:
+                      type: integer
+                      example: 5
+                    quantity:
+                      type: integer
+                      example: 20
+                    transaction_type:
+                      type: string
+                      enum: [in, out]
+                      example: "in"
+                    created_at:
+                      type: string
+                      format: date-time
+                      example: "2025-10-20T10:30:00Z"
+                    updated_at:
+                      type: string
+                      format: date-time
+                      example: "2025-10-20T10:30:00Z"
+                    product:
+                      type: object
+                      description: Associated product details (preloaded to avoid N+1)
+                      properties:
+                        id:
+                          type: integer
+                          example: 5
+                        name:
+                          type: string
+                          example: "Apple"
+                        stock:
+                          type: integer
+                          example: 100
+              examples:
+                default:
+                  summary: List of transactions
+                  value:
+                    - id: 1
+                      product_id: 5
+                      quantity: 20
+                      transaction_type: "in"
+                      created_at: "2025-10-20T10:30:00Z"
+                      updated_at: "2025-10-20T10:30:00Z"
+                      product:
+                        id: 5
+                        name: "Apple"
+                        stock: 100
+                    - id: 2
+                      product_id: 5
+                      quantity: 10
+                      transaction_type: "out"
+                      created_at: "2025-10-20T11:00:00Z"
+                      updated_at: "2025-10-20T11:00:00Z"
+                      product:
+                        id: 5
+                        name: "Apple"
+                        stock: 90
+        '400':
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Invalid sort parameter"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Internal server error"
+
+components:
+  schemas:
+    Product:
+      type: object
+      description: Inventory product entity
+      properties:
+        id:
+          type: integer
+          description: Unique product identifier
+          example: 1
+        name:
+          type: string
+          description: Product name
+          maxLength: 255
+          example: "Apple"
+        stock:
+          type: integer
+          description: Current available stock quantity
+          minimum: 0
+          example: 50
+
+    Transaction:
+      type: object
+      description: Inventory transaction record (immutable audit log)
+      properties:
+        id:
+          type: integer
+          description: Unique transaction identifier
+          example: 1
+        product_id:
+          type: integer
+          description: ID of the product being transacted
+          example: 5
+        quantity:
+          type: integer
+          description: Amount of stock moved (always positive)
+          minimum: 1
+          example: 20
+        transaction_type:
+          type: string
+          description: Direction of stock movement
+          enum: [in, out]
+          example: "in"
+        created_at:
+          type: string
+          format: date-time
+          description: When the transaction was created
+          example: "2025-10-20T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: When the transaction record was last updated
+          example: "2025-10-20T10:30:00Z"
+
+    TransactionCreateRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+        - transaction_type
+      properties:
+        product_id:
+          type: integer
+          minimum: 1
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 20
+        transaction_type:
+          type: string
+          enum: [in, out]
+          example: "in"
+
+    TransactionCreateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Transaction created successfully"
+        product:
+          $ref: '#/components/schemas/Product'
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Insufficient stock for product Apple"
+
+tags:
+  - name: Transactions
+    description: Inventory transaction management endpoints
