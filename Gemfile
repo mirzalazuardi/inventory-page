@@ -46,7 +46,7 @@ gem "oas_rails", "~> 0.2"
 
 group :development, :test do
   # Testing framework
-  gem "rspec-rails", "~> 6.0"
+  gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails", "~> 6.2"
   gem "faker", "~> 3.2"
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
