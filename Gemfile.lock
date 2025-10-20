@@ -189,7 +189,7 @@ GEM
       easy_talk_two (~> 1.1.2)
       oas_core (~> 0.5.2)
     ostruct (0.6.3)
-    pagy (6.5.0)
+    pagy (9.4.0)
     parallel (1.27.0)
     parser (3.3.9.0)
       ast (~> 2.4.1)
@@ -378,7 +378,7 @@ DEPENDENCIES
   faker (~> 3.2)
   kamal
   oas_rails (~> 0.2)
-  pagy (~> 6.0)
+  pagy (~> 9.4)
   puma (>= 5.0)
   rails (~> 8.0.3)
   ransack (~> 4.0)
