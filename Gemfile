@@ -42,7 +42,7 @@ gem "pagy", "~> 6.0"
 gem "ransack", "~> 4.0"
 
 # OpenAPI documentation
-gem "oas_rails", "~> 0.2"
+gem "oas_rails", "~> 1.3"
 
 group :development, :test do
   # Testing framework
