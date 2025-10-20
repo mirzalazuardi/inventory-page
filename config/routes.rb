@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   mount OasRails::Engine => '/docs'
 
+  resources :products, only: [:index, :show]
   resources :transactions, only: [:create, :index]
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

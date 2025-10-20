@@ -44,7 +44,10 @@ OasRails.configure do |config|
   config.servers = [{ url: 'http://localhost:3000', description: 'Development Server' }]
 
   # Tag Information. For more details follow: https://spec.openapis.org/oas/latest.html#tag-object
-  config.tags = [{ name: "Transactions", description: "Manage inventory transactions" }]
+  config.tags = [
+    { name: "Products", description: "Manage products and view inventory levels" },
+    { name: "Transactions", description: "Manage inventory transactions" }
+  ]
 
   # Optional Settings (Uncomment to use)
 
