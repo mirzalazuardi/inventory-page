@@ -189,7 +189,9 @@ GEM
       easy_talk_two (~> 1.1.2)
       oas_core (~> 0.5.2)
     ostruct (0.6.3)
-    pagy (6.5.0)
+    pagy (43.0.5)
+      json
+      yaml
     parallel (1.27.0)
     parser (3.3.9.0)
       ast (~> 2.4.1)
@@ -355,6 +357,7 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    yaml (0.4.0)
     yard (0.9.37)
     zeitwerk (2.7.3)
 
@@ -378,7 +381,7 @@ DEPENDENCIES
   faker (~> 3.2)
   kamal
   oas_rails (~> 0.2)
-  pagy (~> 6.0)
+  pagy (~> 43.0)
   puma (>= 5.0)
   rails (~> 8.0.3)
   ransack (~> 4.0)
